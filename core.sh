@@ -18,3 +18,5 @@ backup(){
 		gdrive upload -p ${ID_DIR_GDRIVE} --name ${HORARIO}.log ${LOG} >/dev/null
 	fi
 }
+
+backup
