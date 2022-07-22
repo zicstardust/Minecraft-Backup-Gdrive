@@ -17,9 +17,6 @@ backup(){
 		tar -czvf ${TARGZ_TEMP} ${DIR_MINECRAFT_MAP} >>${LOG}
 		echo "***********************************************ENVIANDO PARA GOOGLE DRIVE**********************************************" >> ${LOG}
 		gdrive upload -p ${ID_DIR_GDRIVE} --name ${HORARIO}.tar.gz --delete ${TARGZ_TEMP} >>${LOG}
-		echo "***************************************************BACKUP FINALIZADO***************************************************" >> ${LOG}
-		gdrive upload -p ${ID_DIR_GDRIVE} --name ${HORARIO}.log --delete ${LOG} >/dev/null
-		echo "Backup finalizado"
 	fi
 }
 
@@ -32,4 +29,6 @@ delete_old_backups(){
 
 backup
 delete_old_backups
-
+echo "***************************************************BACKUP FINALIZADO***************************************************" >> ${LOG}
+gdrive upload -p ${ID_DIR_GDRIVE} --name ${HORARIO}.log --delete ${LOG} >/dev/null
+echo "Backup finalizado"
