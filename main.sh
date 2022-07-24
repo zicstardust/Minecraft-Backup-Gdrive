@@ -1,12 +1,4 @@
 #!/bin/sh
-export HORARIO=$(date +%y-%m-%d.%H.%M)
-export TARGZ_TEMP="/tmp/minebackup.tar.gz"
-export LOG="/tmp/${HORARIO}.log.txt"
-export LOG_UPLOAD="/tmp/${HORARIO}upload.log"
-export LOG_NAME_EXPORT="${HORARIO}-log.txt"
-export RETENCAO_DATA=$(date +%Y-%m-%d --date "7 days ago")
-GAME=$1
-FORCE=$2
 
 NAME_DIR_DRIVE(){
   gdrive list -m 100 --order folder 1>/tmp/${HORARIO}NAME_DIR_DRIVE
@@ -16,7 +8,8 @@ NAME_DIR_DRIVE(){
 
 BK_MAIOR_RETENCAO(){
   gdrive list --absolute -m 100 --order createdTime 1>/tmp/${HORARIO}BK_MAIOR_RETENCAO
-  grep "$NAME_DIR_DRIVE" /tmp/${HORARIO}BK_MAIOR_RETENCAO 1>/tmp/${HORARIO}2BK_MAIOR_RETENCAO
+  grep "$NAME_DIR_DRIVE" /tmp/${HORARIO}BK_MAIOR_RETENCAO 1>/tmp/${HORARIO}1BK_MAIOR_RETENCAO
+  grep .tar.gz /tmp/${HORARIO}1BK_MAIOR_RETENCAO 1>/tmp/${HORARIO}2BK_MAIOR_RETENCAO
   awk '$3 == "bin" && $6 > "'"${RETENCAO_DATA}"'" { print $2 }' /tmp/${HORARIO}2BK_MAIOR_RETENCAO 1>/tmp/${HORARIO}3BK_MAIOR_RETENCAO
   export BK_MAIOR_RETENCAO="/tmp/${HORARIO}3BK_MAIOR_RETENCAO"
 }
@@ -42,9 +35,9 @@ check_game_run(){
 backup(){
 	echo "***************************************************INICIANDO BACKUP***************************************************" >> ${LOG}
 	echo "***************************************************COMPACTANDO MAPAS***************************************************" >> ${LOG}
-	tar -czvf ${TARGZ_TEMP} ${DIR_MINECRAFT_MAP} >>${LOG}
+	tar -czvf ${TARGZ_TEMP} ${LOCAL_DIR_MINECRAFT_MAP} >>${LOG}
 	echo "***********************************************ENVIANDO PARA GOOGLE DRIVE**********************************************" >> ${LOG}
-	gdrive upload -p ${ID_DIR_GDRIVE} --name ${HORARIO}.tar.gz --delete ${TARGZ_TEMP} >>${LOG}
+	gdrive upload -p ${ID_DIR_GDRIVE} --name ${HORARIO}.tar.gz ${TARGZ_TEMP} >>${LOG}
 	echo "***************************************************BACKUP FINALIZADO***************************************************" >> ${LOG}
 }
 
@@ -68,27 +61,25 @@ delete_old_backups(){
 	fi
 }
 
-debug () {
-echo "***************************************************DEBUG***************************************************"
- echo "RETENCAO_DATA: $RETENCAO_DATA"
- echo " "
- echo "ID_DIR_GDRIVE: $ID_DIR_GDRIVE"
-   echo " "
- echo "NAME_DIR_DRIVE: $NAME_DIR_DRIVE"
-   echo " "
- echo "BK_MAIOR_RETENCAO:"
- cat $BK_MAIOR_RETENCAO
-  echo " "
-    echo "BK_MENOR_RETENCAO:"
-    cat $BK_MENOR_RETENCAO
-  echo " "
-echo "ID_MENOR_RETENCAO: $ID_MENOR_RETENCAO"
-  echo " "
-echo "***************************************************DEBUG***************************************************"
+CARGA_GERAL(){
+  export HORARIO=$(date +%y-%m-%d.%H.%M)
+  export TARGZ_TEMP="/tmp/minebackup.tar.gz"
+  export LOG="/tmp/${HORARIO}.log.txt"
+  export LOG_UPLOAD="/tmp/${HORARIO}upload.log"
+  export LOG_NAME_EXPORT="${HORARIO}-log.txt"
+  export RETENCAO_DATA=$(date +%Y-%m-%d --date "5 days ago")
+}
+
+CARGA_ESPECIFICA(){
+    NAME_DIR_DRIVE
+    BK_MENOR_RETENCAO
+    BK_MAIOR_RETENCAO
 }
 
 
+
 ##################################################################MAIN FUNCTION##########################################################################################
+
 if [[ -z $1 ]];
 then
     echo "Sem parametro, por favor adicione o parametro obrigatorio"
@@ -97,67 +88,71 @@ then
     echo "bedrockappimage: Para Bedrock instalada via appimage launcher"
     echo "bedrockflatpak: Para Bedrock instalada via flatpak:"
     exit
+else
+  case $1 in
+
+    "java" | "-java" | "--java")
+      export LOCAL_DIR_MINECRAFT_MAP="${HOME}/.minecraft/saves"
+      export PROCESS_NAME="minecraft-launcher"
+      export ID_DIR_GDRIVE="1M40tz-AjIPcIxEsZOU7mJ9OQm28IoUiR"
+      ;;
+
+    "bedrockappimage" | "-bedrockappimage" | "--bedrockappimage")
+      export LOCAL_DIR_MINECRAFT_MAP="${HOME}/.local/share/mcpelauncher/games/com.mojang/minecraftWorlds"
+      export PROCESS_NAME="mcpelauncher-client"
+      export ID_DIR_GDRIVE="1-eNR6KUg2kgyQ6vkB9GiBvRRnFuD1gFb"
+      ;;
+
+      "bedrockflatpak" | "-bedrockflatpak" | "--bedrockflatpak")
+      echo "Ainda não implementado suporte a flatpak"
+      exit
+      ;;
+      "h" | "-h" | "--h" | "help" | "-help" | "--help")
+      echo "Ainda não implementado"
+      exit
+      ;;
+      *)
+      echo "parametro invalido"
+      exit
+      ;;
+esac
 fi
 
-case $GAME in
-
-  "java" | "-java" | "--java")
-    export DIR_MINECRAFT_MAP="${HOME}/.minecraft/saves"
-    export PROCESS_NAME="minecraft-launcher"
-    export ID_DIR_GDRIVE="1M40tz-AjIPcIxEsZOU7mJ9OQm28IoUiR"
-    ;;
-
-  "bedrockappimage" | "-bedrockappimage" | "--bedrockappimage")
-    export DIR_MINECRAFT_MAP="${HOME}/.local/share/mcpelauncher/games/com.mojang/minecraftWorlds"
-    export PROCESS_NAME="mcpelauncher-client"
-    export ID_DIR_GDRIVE="1-eNR6KUg2kgyQ6vkB9GiBvRRnFuD1gFb"
-    ;;
-
-    "bedrockflatpak" | "-bedrockflatpak" | "--bedrockflatpak")
-    echo "Ainda não implementado suporte a flatpak"
-    exit
-    ;;
-    *)
-    echo "parametro $GAME invalido"
-    exit
-    ;;
-esac
 
 if [[ -z $2 ]];
 then
-    NAME_DIR_DRIVE
-    BK_MENOR_RETENCAO
-    BK_MAIOR_RETENCAO
-    #debug
+    CARGA_GERAL
+    CARGA_ESPECIFICA
     check_game_run
     check_old_backups
-    gdrive upload -p ${ID_DIR_GDRIVE} --name ${HORARIO}.log --delete ${LOG}
+    gdrive upload -p ${ID_DIR_GDRIVE} --name ${LOG_NAME_EXPORT} --delete ${LOG}
     echo "Backup finalizado"
     exit
-
+else
+  case $2 in
+    "f" | "-f" | "--f" | "force" | "-force" | "--force")
+      echo "ATENÇÂO: Backup executado em modo forçado" >> ${LOG}
+      CARGA_GERAL
+      backup
+      gdrive upload -p ${ID_DIR_GDRIVE} --name ${LOG_NAME_EXPORT} --delete ${LOG}
+      echo "Backup finalizado"
+      exit
+    ;;
+    "check_old_backups" | "deletebkold" | delete_old_backups)
+      CARGA_GERAL
+      CARGA_ESPECIFICA
+      check_old_backups
+      gdrive upload -p ${ID_DIR_GDRIVE} --name ${LOG_NAME_EXPORT} --delete ${LOG}
+      echo "Check finalizado"
+      exit
+    ;;
+    "s" | "-s" | "--s" | "set" | "-set" | "--set")
+    echo "Ainda não implementado"
+    exit
+    ;;
+    *)
+      echo "parametro invalido"
+      exit
+    ;;
+  esac
 fi
-
-case $FORCE in
-
-  "f" | "-f" | "--f" | "force" | "-force" | "--force")
-    echo "ATENÇÂO: Backup executado em modo forçado" >> ${LOG}
-    backup
-    gdrive upload -p ${ID_DIR_GDRIVE} --name ${LOG_NAME_EXPORT} --delete ${LOG}
-    echo "Backup finalizado"
-    exit
-  ;;
-  "check_old_backups" | "deletebkold" | delete_old_backups)
-    NAME_DIR_DRIVE
-    BK_MENOR_RETENCAO
-    BK_MAIOR_RETENCAO
-    #debug
-    check_old_backups
-    gdrive upload -p ${ID_DIR_GDRIVE} --name ${LOG_NAME_EXPORT} --delete ${LOG}
-    echo "Check finalizado"
-    exit
-  ;;
-  *)
-   echo "parametro $FORCE invalido"
-   exit
-   ;;
-esac
