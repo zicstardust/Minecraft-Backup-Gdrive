@@ -1,26 +1,29 @@
 #!/bin/sh
 
 NAME_DIR_DRIVE(){
-  gdrive list -m 100 --order folder 1>/tmp/${HORARIO}NAME_DIR_DRIVE
-  awk '$1 == "'"$ID_DIR_GDRIVE"'" { print $2 }' /tmp/${HORARIO}NAME_DIR_DRIVE 1>/tmp/${HORARIO}2NAME_DIR_DRIVE
-  export NAME_DIR_DRIVE=$(cat /tmp/${HORARIO}2NAME_DIR_DRIVE)
+  gdrive list -m 100 --order folder 1>/tmp/.${HORARIO}NAME_DIR_DRIVE
+  awk '$1 == "'"$ID_DIR_GDRIVE"'" { print $2 }' /tmp/.${HORARIO}NAME_DIR_DRIVE 1>/tmp/.${HORARIO}1NAME_DIR_DRIVE
+  export NAME_DIR_DRIVE=$(cat /tmp/.${HORARIO}1NAME_DIR_DRIVE)
+  rm -f /tmp/.${HORARIO}NAME_DIR_DRIVE /tmp/.${HORARIO}1NAME_DIR_DRIVE
 }
 
 BK_MAIOR_RETENCAO(){
-  gdrive list --absolute -m 100 --order createdTime 1>/tmp/${HORARIO}BK_MAIOR_RETENCAO
-  grep "$NAME_DIR_DRIVE" /tmp/${HORARIO}BK_MAIOR_RETENCAO 1>/tmp/${HORARIO}1BK_MAIOR_RETENCAO
-  grep .tar.gz /tmp/${HORARIO}1BK_MAIOR_RETENCAO 1>/tmp/${HORARIO}2BK_MAIOR_RETENCAO
-  awk '$3 == "bin" && $6 > "'"${RETENCAO_DATA}"'" { print $2 }' /tmp/${HORARIO}2BK_MAIOR_RETENCAO 1>/tmp/${HORARIO}3BK_MAIOR_RETENCAO
-  export BK_MAIOR_RETENCAO="/tmp/${HORARIO}3BK_MAIOR_RETENCAO"
+  gdrive list --absolute -m 100 --order createdTime 1>/tmp/.${HORARIO}BK_MAIOR_RETENCAO
+  grep "$NAME_DIR_DRIVE" /tmp/.${HORARIO}BK_MAIOR_RETENCAO 1>/tmp/.${HORARIO}1BK_MAIOR_RETENCAO
+  grep .tar.gz /tmp/.${HORARIO}1BK_MAIOR_RETENCAO 1>/tmp/.${HORARIO}2BK_MAIOR_RETENCAO
+  awk '$3 == "bin" && $6 > "'"${RETENCAO_DATA}"'" { print $2 }' /tmp/.${HORARIO}2BK_MAIOR_RETENCAO 1>/tmp/.${HORARIO}BK_MAIOR_RETENCAO 
+  export BK_MAIOR_RETENCAO="/tmp/.${HORARIO}BK_MAIOR_RETENCAO"
+  rm -f /tmp/.${HORARIO}1BK_MAIOR_RETENCAO /tmp/.${HORARIO}2BK_MAIOR_RETENCAO
 }
 
 BK_MENOR_RETENCAO(){
-  gdrive list --absolute -m 100 --order createdTime 1>/tmp/${HORARIO}BK_MENOR_RETENCAO
-  grep "$NAME_DIR_DRIVE" /tmp/${HORARIO}BK_MENOR_RETENCAO 1>/tmp/${HORARIO}2BK_MENOR_RETENCAO
-  awk '$3 == "bin" && $6 < "'"${RETENCAO_DATA}"'" { print $2 }' /tmp/${HORARIO}2BK_MENOR_RETENCAO 1>/tmp/${HORARIO}3BK_MENOR_RETENCAO
-  awk '$3 == "bin" && $6 < "'"${RETENCAO_DATA}"'" { print $1 }' /tmp/${HORARIO}2BK_MENOR_RETENCAO 1>/tmp/${HORARIO}ID_MENOR_RETENCAO
-  export BK_MENOR_RETENCAO="/tmp/${HORARIO}3BK_MENOR_RETENCAO"
-  export ID_MENOR_RETENCAO=$(cat /tmp/${HORARIO}ID_MENOR_RETENCAO)
+  gdrive list --absolute -m 100 --order createdTime 1>/tmp/.${HORARIO}BK_MENOR_RETENCAO
+  grep "$NAME_DIR_DRIVE" /tmp/.${HORARIO}BK_MENOR_RETENCAO 1>/tmp/.${HORARIO}1BK_MENOR_RETENCAO
+  awk '$3 == "bin" && $6 < "'"${RETENCAO_DATA}"'" { print $2 }' /tmp/.${HORARIO}1BK_MENOR_RETENCAO 1>/tmp/.${HORARIO}BK_MENOR_RETENCAO
+  awk '$3 == "bin" && $6 < "'"${RETENCAO_DATA}"'" { print $1 }' /tmp/.${HORARIO}1BK_MENOR_RETENCAO 1>/tmp/.${HORARIO}ID_MENOR_RETENCAO
+  export BK_MENOR_RETENCAO="/tmp/.${HORARIO}BK_MENOR_RETENCAO"
+  export ID_MENOR_RETENCAO=$(cat /tmp/.${HORARIO}ID_MENOR_RETENCAO)
+  rm -f /tmp/.${HORARIO}1BK_MENOR_RETENCAO /tmp/.${HORARIO}ID_MENOR_RETENCAO
 }
 
 
@@ -39,6 +42,7 @@ backup(){
 	echo "***********************************************ENVIANDO PARA GOOGLE DRIVE**********************************************" >> ${LOG}
 	gdrive upload -p ${ID_DIR_GDRIVE} --name ${HORARIO}.tar.gz ${TARGZ_TEMP} >>${LOG}
 	echo "***************************************************BACKUP FINALIZADO***************************************************" >> ${LOG}
+  rm -f ${TARGZ_TEMP}
 }
 
 check_old_backups(){
@@ -49,6 +53,7 @@ check_old_backups(){
 	else
         echo "Não exixtem backups anteriores a ${RETENCAO_DATA} para deletar" >> ${LOG}
 	fi
+  rm -f $BK_MENOR_RETENCAO $BK_MAIOR_RETENCAO
 }
 
 delete_old_backups(){
@@ -63,9 +68,9 @@ delete_old_backups(){
 
 CARGA_GERAL(){
   export HORARIO=$(date +%y-%m-%d.%H.%M)
-  export TARGZ_TEMP="/tmp/minebackup.tar.gz"
-  export LOG="/tmp/${HORARIO}.log.txt"
-  export LOG_UPLOAD="/tmp/${HORARIO}upload.log"
+  export TARGZ_TEMP="/tmp/.minebackup.tar.gz"
+  export LOG="/tmp/.${HORARIO}.log.txt"
+  export LOG_UPLOAD="/tmp/.${HORARIO}upload.log"
   export LOG_NAME_EXPORT="${HORARIO}-log.txt"
   export RETENCAO_DATA=$(date +%Y-%m-%d --date "5 days ago")
 }
