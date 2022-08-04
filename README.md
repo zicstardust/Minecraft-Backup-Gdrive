@@ -1,7 +1,8 @@
 # Backup Minecraft Maps to Google Drive
 Create tar.gz archive content a world and make upload to Google Drive
 
-### Requisi:
+### Requisitos:
+bash, awk, grep, gdrive
 
 ### Command:
 minebkgdrive [OBRIGATORIO] [OPTIONAL]

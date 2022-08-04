@@ -5,25 +5,25 @@ bash='/bin/sh'
 gp='/bin/grep'
 
 requirements () {
-if [-f $gdrive]; then
+if [[-f $gdrive || -L $gdrive]]; then
 	echo "gdrive installed"
 else
 	echo "please install gdrive"
 	exit
 fi
-if [-f $awk]; then
+if [[-f $awk || -L $awk]]; then
         echo "awk installed"
 else    
         echo "please install awk"
         exit
 fi
-if [-f $bash]; then
+if [[-f $bash || -L $bash]]; then
         echo "bash installed"
 else    
         echo "please install bash"
         exit
 fi
-if [-f $gp]; then
+if [[-f $gp || -S $gp]]; then
         echo "grep installed"
 else    
         echo "please install grep"
